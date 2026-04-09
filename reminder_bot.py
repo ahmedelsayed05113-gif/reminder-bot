@@ -1,4 +1,4 @@
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import discord
 from discord.ext import commands, tasks
@@ -6,19 +6,17 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 import asyncio
-import uvicorn
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
-# Get secrets from environment variables
 TOKEN = os.getenv('DISCORD_TOKEN')
-CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
-PORT = int(os.getenv('PORT', 8000))
+CHANNEL_ID = int(os.getenv('CHANNEL_ID', 0))
 
-# Validate that secrets are loaded
-if not TOKEN or not CHANNEL_ID:
-    raise ValueError("ERROR: DISCORD_TOKEN or CHANNEL_ID not found in .env file!")
+if not TOKEN:
+    raise ValueError("ERROR: DISCORD_TOKEN not found in environment variables!")
+if not CHANNEL_ID:
+    raise ValueError("ERROR: CHANNEL_ID not found in environment variables!")
 
 # Bot setup
 intents = discord.Intents.default()
@@ -71,9 +69,9 @@ last_sent = set()
 @bot.event
 async def on_ready():
     """Called when the bot successfully connects to Discord"""
-    print(f"Bot logged in as {bot.user}")
-    print(f"Bot ID: {bot.user.id}")
-    print("Starting daily reminder task...")
+    print(f"✅ Bot logged in as {bot.user}")
+    print(f"📊 Bot ID: {bot.user.id}")
+    print("⏰ Starting daily reminder task...")
     daily_reminder.start()
 
 
@@ -85,7 +83,7 @@ async def daily_reminder():
     
     channel = bot.get_channel(CHANNEL_ID)
     if not channel:
-        print("ERROR: Channel not found")
+        print("❌ ERROR: Channel not found")
         return
     
     for meeting in schedule:
@@ -107,7 +105,7 @@ async def daily_reminder():
             )
             
             last_sent.add(key)
-            print(f"Reminder sent for {meeting['name']} at {meeting['time']} on {current_day}")
+            print(f"✉️ Reminder sent for {meeting['name']} at {meeting['time']} on {current_day}")
 
 
 @daily_reminder.before_loop
@@ -116,39 +114,43 @@ async def before_reminder():
     await bot.wait_until_ready()
 
 
-# FastAPI lifespan context manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage Discord bot lifecycle with FastAPI"""
-    # Startup: Start Discord bot in background
+    # Startup
     asyncio.create_task(bot.start(TOKEN))
-    print("Discord bot started in background")
+    print("🚀 Discord bot started in background")
     yield
-    # Shutdown: Close Discord bot
+    # Shutdown
     await bot.close()
-    print("Discord bot closed")
+    print("🛑 Discord bot closed")
 
 
-# Create FastAPI app
-app = FastAPI(lifespan=lifespan)
+# FastAPI app
+app = FastAPI(
+    title="Discord Meeting Reminder Bot",
+    version="1.0.0",
+    lifespan=lifespan
+)
 
 
 @app.get("/")
 async def root():
-    """Health check endpoint"""
+    """Main endpoint"""
     return {
         "status": "online",
         "bot_name": bot.user.name if bot.user else "Not connected",
         "bot_id": bot.user.id if bot.user else None,
-        "is_ready": bot.is_ready()
+        "is_ready": bot.is_ready(),
+        "message": "Discord Meeting Reminder Bot is running! 🤖"
     }
 
 
 @app.get("/health")
 async def health():
-    """Health check for Railway"""
+    """Health check endpoint for Railway"""
     return {
-        "status": "healthy",
+        "status": "healthy" if bot.is_ready() else "starting",
         "bot_ready": bot.is_ready()
     }
 
@@ -158,14 +160,26 @@ async def get_schedule():
     """Get current meeting schedule"""
     return {
         "schedule": schedule,
-        "reminders_sent_today": len(last_sent)
+        "reminders_sent_today": len(last_sent),
+        "bot_status": "ready" if bot.is_ready() else "not ready"
     }
 
 
-if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=PORT,
-        reload=False
-    )
+@app.get("/status")
+async def status():
+    """Detailed status information"""
+    return {
+        "bot": {
+            "connected": bot.is_ready(),
+            "name": bot.user.name if bot.user else None,
+            "id": bot.user.id if bot.user else None,
+        },
+        "channel": {
+            "id": CHANNEL_ID,
+            "found": bot.get_channel(CHANNEL_ID) is not None
+        },
+        "reminders": {
+            "total_meetings": len(schedule),
+            "sent_today": len(last_sent)
+        }
+    }
