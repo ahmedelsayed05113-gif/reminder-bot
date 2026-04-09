@@ -1,0 +1,137 @@
+# Discord Meeting Reminder Bot 🤖
+
+A FastAPI-powered Discord bot that sends automatic meeting reminders to your team.
+
+## Features ✨
+
+- ⏰ Automatic meeting reminders based on schedule
+- 👥 Team-specific mentions
+- 🔄 Runs 24/7 on Railway
+- 🌐 REST API endpoints for monitoring
+- 🛡️ Environment variable configuration
+
+## Setup 🚀
+
+### 1. Discord Bot Setup
+
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
+2. Create a new application
+3. Go to "Bot" section and create a bot
+4. **IMPORTANT**: Click "Regenerate Token" (your old token was exposed)
+5. Copy the new token
+6. Enable these Privileged Gateway Intents:
+   - Message Content Intent
+   - Server Members Intent
+
+### 2. Get Channel ID
+
+1. Enable Developer Mode in Discord (Settings → Advanced → Developer Mode)
+2. Right-click on your target channel
+3. Click "Copy Channel ID"
+
+### 3. Deploy to Railway
+
+1. Push this code to GitHub
+2. Go to [Railway](https://railway.app/)
+3. Create new project from GitHub repo
+4. Add Environment Variables:
+   - `DISCORD_TOKEN`: Your new Discord bot token
+   - `CHANNEL_ID`: Your Discord channel ID
+5. Deploy!
+
+## Environment Variables 🔐
+
+Create a `.env` file locally (already in `.gitignore`):
+
+```env
+DISCORD_TOKEN=your_bot_token_here
+CHANNEL_ID=1491453600822460655
+PORT=8000
+```
+
+**⚠️ NEVER commit the `.env` file to Git!**
+
+## API Endpoints 📡
+
+- `GET /` - Bot status and info
+- `GET /health` - Health check (for Railway)
+- `GET /schedule` - View meeting schedule
+- `GET /status` - Detailed bot status
+
+## Meeting Schedule 📅
+
+The bot checks every 30 seconds and sends reminders when:
+- Current day matches the meeting's days
+- Current time matches the meeting's time
+- The reminder hasn't been sent yet today
+
+### Current Schedule:
+
+**Team Alaa Meeting**
+- Time: 11:30
+- Days: Sunday, Tuesday, Wednesday, Thursday
+
+**Team Esraa Meeting**
+- Time: 11:00
+- Days: Sunday, Tuesday, Wednesday, Thursday
+
+**Business Meeting**
+- Time: 10:00
+- Days: Monday
+
+## Local Testing 🧪
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the bot
+uvicorn main:app --reload
+
+# Visit http://localhost:8000
+```
+
+## Files Structure 📁
+
+```
+.
+├── main.py              # Main FastAPI + Discord bot
+├── requirements.txt     # Python dependencies
+├── railway.json         # Railway configuration
+├── .env.example         # Environment variables template
+├── .gitignore          # Git ignore rules
+└── README.md           # This file
+```
+
+## Troubleshooting 🔧
+
+### Bot not connecting?
+- Check if `DISCORD_TOKEN` is correct
+- Regenerate token if exposed
+- Check Railway logs
+
+### No reminders sent?
+- Verify `CHANNEL_ID` is correct
+- Check bot has permissions in the channel
+- Check Railway deployment logs
+
+### Railway deployment failing?
+- Ensure `railway.json` exists
+- Check environment variables are set
+- View deployment logs in Railway dashboard
+
+## Security Notes 🔒
+
+1. ✅ Never hardcode tokens in code
+2. ✅ Always use environment variables
+3. ✅ Add `.env` to `.gitignore`
+4. ✅ Regenerate tokens if exposed
+5. ✅ Use Railway's secret management
+
+## Support 💬
+
+For issues or questions, check the Railway logs or Discord bot status at your deployment URL.
+
+---
+
+Made with ❤️ for efficient team coordination
