@@ -43,7 +43,7 @@ schedule = [
             "<@692433164924223649>",
             "<@1491700233405468697>"
         ],
-        "voice_channel_id": "1491449677504315463"
+        "voice_channel_id": "YOUR_ALAA_VOICE_CHANNEL_ID"  # ← حط الـ ID هنا
     },
     {
         "name": "Team Esraa Meeting",
@@ -59,17 +59,18 @@ schedule = [
             "<@820016480284180531>",
             "<@1491707131924185198>"
         ],
-        "voice_channel_id": "1491449604687003748"
+        "voice_channel_id": "YOUR_ESRAA_VOICE_CHANNEL_ID"  # ← حط الـ ID هنا
     },
     {
         "name": "Business Meeting",
         "time": "10:00",
         "days": ["Monday"],
         "mentions": ["@everyone"],
-        "voice_channel_id": "1491473588686028930" 
+        "voice_channel_id": "YOUR_BUSINESS_VOICE_CHANNEL_ID"  # ← حط الـ ID هنا
     }
 ]
 
+# Track sent reminders to avoid duplicates
 last_sent = set()
 
 
@@ -94,6 +95,7 @@ async def on_ready():
 @tasks.loop(seconds=30)
 async def daily_reminder():
     """Check every 30 seconds if any meeting should be announced"""
+    # استخدام توقيت القاهرة
     now = datetime.now(CAIRO_TZ)
     current_day = now.strftime("%A")
     
@@ -114,8 +116,10 @@ async def daily_reminder():
         ):
             mentions = " ".join(meeting.get("mentions", ["@everyone"]))
             
+            # بناء الرسالة
             message = f"{mentions}\n**Reminder:** {meeting['name']} is starting now!\n⏰ Time: {meeting['time']} (Cairo time)"
             
+            # إضافة لينك الـ voice channel الخاص بالـ meeting
             voice_channel_id = meeting.get("voice_channel_id")
             if voice_channel_id:
                 voice_link = get_voice_channel_link(voice_channel_id)
