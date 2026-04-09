@@ -1,8 +1,12 @@
+from fastapi import FastAPI, BackgroundTasks
+from contextlib import asynccontextmanager
 import discord
 from discord.ext import commands, tasks
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+import asyncio
+import uvicorn
 
 # Load environment variables from .env file
 load_dotenv()
@@ -10,6 +14,7 @@ load_dotenv()
 # Get secrets from environment variables
 TOKEN = os.getenv('DISCORD_TOKEN')
 CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
+PORT = int(os.getenv('PORT', 8000))
 
 # Validate that secrets are loaded
 if not TOKEN or not CHANNEL_ID:
@@ -111,6 +116,56 @@ async def before_reminder():
     await bot.wait_until_ready()
 
 
-# Run the bot
+# FastAPI lifespan context manager
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage Discord bot lifecycle with FastAPI"""
+    # Startup: Start Discord bot in background
+    asyncio.create_task(bot.start(TOKEN))
+    print("Discord bot started in background")
+    yield
+    # Shutdown: Close Discord bot
+    await bot.close()
+    print("Discord bot closed")
+
+
+# Create FastAPI app
+app = FastAPI(lifespan=lifespan)
+
+
+@app.get("/")
+async def root():
+    """Health check endpoint"""
+    return {
+        "status": "online",
+        "bot_name": bot.user.name if bot.user else "Not connected",
+        "bot_id": bot.user.id if bot.user else None,
+        "is_ready": bot.is_ready()
+    }
+
+
+@app.get("/health")
+async def health():
+    """Health check for Railway"""
+    return {
+        "status": "healthy",
+        "bot_ready": bot.is_ready()
+    }
+
+
+@app.get("/schedule")
+async def get_schedule():
+    """Get current meeting schedule"""
+    return {
+        "schedule": schedule,
+        "reminders_sent_today": len(last_sent)
+    }
+
+
 if __name__ == "__main__":
-    bot.run(TOKEN)
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=PORT,
+        reload=False
+    )
