@@ -4,10 +4,16 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables from .env file
 load_dotenv()
-TOKEN = 'MTQ5MTcwMDI2NDUxODk0Njg3Nw.G6SFOe.2PQLnn3rhBwvVqTC8Gxt31ku03sqoUgTdDnZ_I'
-CHANNEL_ID = 1491453600822460655
+
+# Get secrets from environment variables
+TOKEN = os.getenv('DISCORD_TOKEN')
+CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
+
+# Validate that secrets are loaded
+if not TOKEN or not CHANNEL_ID:
+    raise ValueError("ERROR: DISCORD_TOKEN or CHANNEL_ID not found in .env file!")
 
 # Bot setup
 intents = discord.Intents.default()
@@ -42,7 +48,7 @@ schedule = [
             "<@1491449087004770418>",
             "<@1136359365067157514>",
             "<@820016480284180531>",
-            "<@1491707131924185198>",
+            "<@1491707131924185198>"
         ]
     },
     {
